@@ -32,6 +32,13 @@ Rpn2=(rhoa*.01)/(PI*((((paraD2/2)+space_p2)**2)-((paraD2/2)**2)))
 Rpx=(rhoa*.01)/(PI*((((axonD/2)+space_i)**2)-((axonD/2)**2)))
 
 
+# Read the pool
+with open('MatingPool.pickle','rb') as p_file:
+        MatingPool = pickle.load(p_file)
+index_min = MatingPool[1].index(min(MatingPool[1]))
+f_min = MatingPool[0][index_min]
+
+
 def read_dat(file_name):
     df = pd.read_csv('sth/sth-data/' + file_name, header=None, sep=' ')
     df = df.sort_values(by=[0])
@@ -114,7 +121,7 @@ df_dis_tree0 = pd.read_csv('sth/sth-data/Tree_0_length.csv')['Tree 0']
 # Building Cell
 class CreateSth():
     def __init__(self, params=None):
-        self.scaler = [0.0006031594269147827, 0.0005766490708207523, 0.002525326636556309, 4.7427670350563245e-05, 0.0021595840000297704, 0.03767001286898594, 8.074572695566574e-06, 4.269750182353891e-06, 0.006091518220966048, 0.20160939282018547, 0.001056829236398295, 0.004851792123941859, 0.890945150858744, 0.1006329204702115, 0.316301124239901, 0.17260884570160695, 0.006691103479060545, 1.1306392456338705e-06, 171.83274973635434, 17.971076602000334]
+        self.scaler = f_min
         self.rhoa= 7e5
         self.soma = h.Section(name='soma', cell=self)
         self.initseg = h.Section(name='initseg', cell=self)
