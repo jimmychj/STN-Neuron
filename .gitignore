@@ -1,3 +1,4 @@
 sthnrn/
-.DS_Store/
-
+.DS_Store
+sth/arm64/
+__pycache__/
