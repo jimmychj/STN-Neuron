@@ -53,18 +53,18 @@ def get_freq_detect_burst(v, dt):
     return freq
 
 
-def cal_score_HP(v, weight, v_rest):
-    spikes = find_peaks(v[4500:24000], height=-80)
+def cal_score_HP(v, weight, v_rest, dt):
+    spikes = find_peaks(v[int(112.5/dt):int(600/dt)], height=-80)
     if len(spikes[0]) == 0:
-        v_HP = min(v[4500:24000])
+        v_HP = min(v[int(112.5/dt):int(600/dt)])
         # score = (v_HP - (v_rest-20)) / 20 * weight
         score_1 = (v_HP - (-80)) / 20 * weight/2
         if score_1 < 0:
             score_1 = 0
         score_shp = 0
-        v_ht = v_HP+(v[23000]-v_HP)/2+1
-        if v[14000]>v_ht:
-            score_shp = (v[14000]-v_ht) / 3 * weight/4
+        v_ht = v_HP+(v[int(575/dt)]-v_HP)/2+1
+        if v[int(350/dt)]>v_ht:
+            score_shp = (v[int(350/dt)]-v_ht) / 3 * weight/4
         else:
             score_shp = 0
         e_slp = v[23000] - v_HP
@@ -76,7 +76,7 @@ def cal_score_HP(v, weight, v_rest):
     else:
         v_HP = 0
         score = weight
-    spikes_all = find_peaks(v[24000:], height=-20)
+    spikes_all = find_peaks(v[int(600/dt):], height=-20)
     if len(spikes_all[0]) == 0:
         score = score
     elif min(spikes_all[1]['peak_heights']) < 0:
@@ -88,8 +88,8 @@ def cal_score_HP(v, weight, v_rest):
     return score, v_HP
 
 
-def check_hp_last_spikes(v, score, weight):
-    spikes_after = find_peaks(v[30000:], height=0)
+def check_hp_last_spikes(v, score, weight, dt):
+    spikes_after = find_peaks(v[int(750/dt):], height=0)
     if len(spikes_after[0]) != 0:
         score = score
     else:
@@ -264,8 +264,8 @@ def run_cost_simulation(f_index, plotting=False):
     h.continuerun(1500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_0 = t[40000:]
-    v_0 = v[40000:]
+    t_0 = t[int(1000/h.dt):]
+    v_0 = v[int(1000/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_sp = get_freq_detect_burst(v_0, h.dt)
@@ -309,7 +309,7 @@ def run_cost_simulation(f_index, plotting=False):
     t_3 = soma_t.to_python()
     soma_v.clear()
     soma_t.clear()
-    score_hp, v_HP = cal_score_HP(v_3, 200, v_rest)
+    score_hp, v_HP = cal_score_HP(v_3, 200, v_rest, h.dt)
     if math.isnan(score_hp):
         score_hp = 100
 
@@ -322,8 +322,8 @@ def run_cost_simulation(f_index, plotting=False):
     h.continuerun(2500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_1 = t[20000:]
-    v_1 = v[20000:]
+    t_1 = t[int(500/h.dt):]
+    v_1 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi1 = get_freq_detect_burst(v_1, h.dt)
@@ -339,8 +339,8 @@ def run_cost_simulation(f_index, plotting=False):
     h.continuerun(3000 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_2 = t[20000:]
-    v_2 = v[20000:]
+    t_2 = t[int(500/h.dt):]
+    v_2 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi2 = get_freq_detect_burst(v_2, h.dt)
@@ -356,8 +356,8 @@ def run_cost_simulation(f_index, plotting=False):
     h.continuerun(2500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_4 = t[20000:]
-    v_4 = v[20000:]
+    t_4 = t[int(500/h.dt):]
+    v_4 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi3 = get_freq_detect_burst(v_4, h.dt)
@@ -373,8 +373,8 @@ def run_cost_simulation(f_index, plotting=False):
     h.continuerun(2500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_5 = t[20000:]
-    v_5 = v[20000:]
+    t_5 = t[int(500/h.dt):]
+    v_5 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi4 = get_freq_detect_burst(v_5, h.dt)
@@ -394,7 +394,7 @@ def run_cost_simulation(f_index, plotting=False):
         t_check = soma_t.to_python()
         soma_v.clear()
         soma_t.clear()
-        score_hp = check_hp_last_spikes(v_check, score_hp, 100)
+        score_hp = check_hp_last_spikes(v_check, score_hp, 100, h.dt)
 
     score_total = score_sp + score_shw  + score_AHP + score_peak + score_fi + score_hp + score_ir +score_rest
 
@@ -411,8 +411,8 @@ def run_cost_simulation(f_index, plotting=False):
         plt.figure()
         peaks = find_peaks(v_0, height=0)
         t_peak = peaks[0][1]
-        v_single = v_0[t_peak-400:t_peak+600]
-        t_single = t_0[t_peak-400:t_peak+600]
+        v_single = v_0[t_peak-int(10/h.dt):t_peak+int(15/h.dt)]
+        t_single = t_0[t_peak-int(10/h.dt):t_peak+int(15/h.dt)]
         plt.plot(t_single, v_single)
         plt.title('Single AP')
         plt.xlabel('Time (ms)')

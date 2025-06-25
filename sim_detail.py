@@ -55,12 +55,12 @@ def get_freq_detect_burst(v, dt):
     return freq
 
 
-def cal_score_HP(v, weight, v_rest):
-    spikes = find_peaks(v[4500:24000], height=-80)
+def cal_score_HP(v, weight, v_rest, dt):
+    spikes = find_peaks(v[int(112.5/dt):int(600/dt)], height=-80)
     if len(spikes[0]) == 0:
-        v_HP = min(v[4500:24000])
-        v_ht = v_HP+(v[23000]-v_HP)/2+1
-        e_slp = v[23000] - v_HP
+        v_HP = min(v[int(112.5/dt):int(600/dt)])
+        v_ht = v_HP+(v[int(575/dt)]-v_HP)/2+1
+        e_slp = v[int(575/dt)] - v_HP
     else:
         v_HP = 0
     spikes_all = find_peaks(v[24000:], height=-20)
@@ -142,8 +142,8 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     h.continuerun(1500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_0 = t[40000:]
-    v_0 = v[40000:]
+    t_0 = t[int(1000/h.dt):]
+    v_0 = v[int(1000/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_sp = get_freq_detect_burst(v_0, h.dt)
@@ -169,7 +169,7 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     t_3 = soma_t.to_python()
     soma_v.clear()
     soma_t.clear()
-    v_HP = cal_score_HP(v_3, 200, v_rest)
+    v_HP = cal_score_HP(v_3, 200, v_rest, h.dt)
 
     # Check FI curve
     svstate.restore()
@@ -180,8 +180,8 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     h.continuerun(2500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_1 = t[20000:]
-    v_1 = v[20000:]
+    t_1 = t[int(500/h.dt):]
+    v_1 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi1 = get_freq_detect_burst(v_1, h.dt)
@@ -194,8 +194,8 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     h.continuerun(3000 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_2 = t[20000:]
-    v_2 = v[20000:]
+    t_2 = t[int(500/h.dt):]
+    v_2 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi2 = get_freq_detect_burst(v_2, h.dt)
@@ -208,8 +208,8 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     h.continuerun(2500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_4 = t[20000:]
-    v_4 = v[20000:]
+    t_4 = t[int(500/h.dt):]
+    v_4 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi3 = get_freq_detect_burst(v_4, h.dt)
@@ -222,8 +222,8 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     h.continuerun(2500 * ms)
     v = soma_v.to_python()
     t = soma_t.to_python()
-    t_5 = t[20000:]
-    v_5 = v[20000:]
+    t_5 = t[int(500/h.dt):]
+    v_5 = v[int(500/h.dt):]
     soma_v.clear()
     soma_t.clear()
     freq_fi4 = get_freq_detect_burst(v_5, h.dt)
