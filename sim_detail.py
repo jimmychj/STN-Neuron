@@ -1,4 +1,4 @@
-from stn_detail import CreateSth, set_aCSF
+from stn_detail import CreateSth
 import matplotlib.pyplot as plt
 import time
 import pandas as pd
@@ -128,7 +128,6 @@ def run_cost_simulation(f_index, morphology, plotting=False):
     f = f_index
     h.dt = 0.025
     h.celsius = 37
-    set_aCSF(4)
 
     # Check input resistance
     stn_cell = create_updated_cell(f, morphology)

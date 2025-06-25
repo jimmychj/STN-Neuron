@@ -15,27 +15,6 @@ h.load_file("stdlib.hoc")
 h.load_file("import3d.hoc")
 
 
-# def read_dat(file_name):
-#     df = pd.read_csv('sth/sth-data/' + file_name, header=None, sep=' ')
-#     df = df.sort_values(by=[0])
-#     df = df.reset_index(drop=True)
-#     return df
-
-
-# def read_channel_distribution(g_name, c_name):
-#     df = pd.read_csv('sth/sth-data/cell-'+g_name+'_'+c_name, header=None, sep=' ')
-#     df.columns = ['sec_name', 'sec_ref', 'seg', 'val']
-#     return df
-
-
-# def find_dat(i, df):
-#     children = [df[1][i]-1, df[2][i]-1]
-#     diam = df[3][i]
-#     L = df[4][i]
-#     nseg = df[5][i]
-#     return [children, diam, L, nseg]
-
-
 def insert_channels(sec):
     sec.insert('STh')
     sec.insert('Na')
@@ -94,6 +73,7 @@ class CreateSth():
         cell.input(morphology)
         i3d = h.Import3d_GUI(cell, 0)
         i3d.instantiate(self)
+        set_aCSF(4)
         factor = 2
         for sec in self.dend:
             sec.L = sec.L * factor
