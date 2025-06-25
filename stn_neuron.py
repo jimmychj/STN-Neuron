@@ -2,53 +2,19 @@ import sys, os
 from neuron import h
 import neuron as nrn
 from neuron.units import ms, mV
-# import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.signal import find_peaks
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+
 
 path = os.getcwd()
 nrn.load_mechanisms(path+'/sth')
 h.load_file('stdrun.hoc')
-PI = np.pi
-fiberD=2
-paralength1=3  
-nodelength=1
-space_p1=0.002  
-space_p2=0.004
-space_i=0.004
-rhoa = 7e5
-nodeD = 1.4
-axonD = 1.6
-paraD1 = 1.4
-paraD2 = 1.6
-mycm=0.1
-mygm = 0.001
-nl=30
-Rpn0=(rhoa*.01)/(PI*((((nodeD/2)+space_p1)**2)-((nodeD/2)**2)))
-Rpn1=(rhoa*.01)/(PI*((((paraD1/2)+space_p1)**2)-((paraD1/2)**2)))
-Rpn2=(rhoa*.01)/(PI*((((paraD2/2)+space_p2)**2)-((paraD2/2)**2)))
-Rpx=(rhoa*.01)/(PI*((((axonD/2)+space_i)**2)-((axonD/2)**2)))
-
-
-# Read the pool
-with open('MatingPool.pickle','rb') as p_file:
-        MatingPool = pickle.load(p_file)
-index_min = MatingPool[1].index(min(MatingPool[1]))
-f_min = MatingPool[0][index_min]
 
 
 def read_dat(file_name):
     df = pd.read_csv('sth/sth-data/' + file_name, header=None, sep=' ')
     df = df.sort_values(by=[0])
     df = df.reset_index(drop=True)
-    return df
-
-
-def read_channel_distribution(g_name, c_name):
-    df = pd.read_csv('sth/sth-data/cell-'+g_name+'_'+c_name, header=None, sep=' ')
-    df.columns = ['sec_name', 'sec_ref', 'seg', 'val']
     return df
 
 
@@ -91,8 +57,8 @@ def set_aCSF(i):
 #         h.clo0_cl_ion = 135
     if i == 4:
         # print("Setting in vitro parameters based on Bevan & Wilson (1999)")
-        h.nai0_na_ion = 15             # This is different in Miocinovic model
-        h.nao0_na_ion = 128.5          # This is different in Miocinovic model
+        h.nai0_na_ion = 15
+        h.nao0_na_ion = 128.5
         h.ki0_k_ion = 140
         h.ko0_k_ion = 2.5
         h.cai0_ca_ion = 1e-04
@@ -121,15 +87,38 @@ df_dis_tree0 = pd.read_csv('sth/sth-data/Tree_0_length.csv')['Tree 0']
 # Building Cell
 class CreateSth():
     def __init__(self, params=None):
-        self.scaler = f_min
         self.rhoa= 7e5
+        self._initialize_constants()
+        self.params = params
         self.soma = h.Section(name='soma', cell=self)
         self.initseg = h.Section(name='initseg', cell=self)
+        set_aCSF(4)
         self._setup_morphology()
         self.sdi = [self.soma] + self.dend0 + self.dend1 + [self.initseg]
         self.axon = self.node + self.MYSA + self.FLUT + self.STIN
-        self.all = [self.soma] + self.dend0 + self.dend1 + [self.initseg] + self.node + self.MYSA + self.FLUT + self.STIN
         self._setup_biophysics()
+
+
+    def _initialize_constants(self):
+        PI = np.pi
+        fiberD=2
+        paralength1=3  
+        nodelength=1
+        space_p1=0.002  
+        space_p2=0.004
+        space_i=0.004
+        nodeD = 1.4
+        axonD = 1.6
+        paraD1 = 1.4
+        paraD2 = 1.6
+        self.mycm=0.1
+        self.mygm = 0.001
+        self.nl=30
+        self.Rpn0=(self.rhoa*.01)/(PI*((((nodeD/2)+space_p1)**2)-((nodeD/2)**2)))
+        self.Rpn1=(self.rhoa*.01)/(PI*((((paraD1/2)+space_p1)**2)-((paraD1/2)**2)))
+        self.Rpn2=(self.rhoa*.01)/(PI*((((paraD2/2)+space_p2)**2)-((paraD2/2)**2)))
+        self.Rpx=(self.rhoa*.01)/(PI*((((axonD/2)+space_i)**2)-((axonD/2)**2)))
+        
         
     def _setup_morphology(self):
         self.soma.diam = 18.3112
@@ -269,99 +258,99 @@ class CreateSth():
 
     def _setup_biophysics(self):
         for sec in self.sdi:
-            sec.Ra = self.scaler[18]    # Axial resistance in Ohm * cm
+            sec.Ra = self.params[18]    # Axial resistance in Ohm * cm
             sec.cm = 1      # Membrane capacitance in micro Farads / cm^2
             insert_channels(sec)
+
         for sec in self.axon:
             sec.Ra = self.rhoa / 10000
             sec.cm = 2
-        # print("Testing: {}".format(self.scaler))
+
         for seg in self.soma:
-            seg.NaL.gna = self.scaler[7]
-            seg.Na.gna = self.scaler[8]
-            seg.HVA.gcaL = self.scaler[0]
-            seg.HVA.gcaN = self.scaler[1]
-            seg.CaT.gcaT = self.scaler[2]
-            seg.Ih.gk = self.scaler[3]
-            seg.KDR.gk = self.scaler[4]
-            seg.Kv31.gk = self.scaler[5]
-            seg.sKCa.gk = self.scaler[6]
-            seg.STh.gpas = self.scaler[17]
+            seg.NaL.gna = self.params[7]
+            seg.Na.gna = self.params[8]
+            seg.HVA.gcaL = self.params[0]
+            seg.HVA.gcaN = self.params[1]
+            seg.CaT.gcaT = self.params[2]
+            seg.Ih.gk = self.params[3]
+            seg.KDR.gk = self.params[4]
+            seg.Kv31.gk = self.params[5]
+            seg.sKCa.gk = self.params[6]
+            seg.STh.gpas = self.params[17]
+
         for seg in self.initseg:
-            seg.NaL.gna = self.scaler[7]
-            seg.Na.gna = self.scaler[8] * self.scaler[19]
-            seg.HVA.gcaL = self.scaler[0]
-            seg.HVA.gcaN = self.scaler[1]
-            seg.CaT.gcaT = self.scaler[2]
-            seg.Ih.gk = self.scaler[3]
-            seg.KDR.gk = self.scaler[4]
-            seg.Kv31.gk = self.scaler[5]
-            seg.sKCa.gk = self.scaler[6]
-            seg.STh.gpas = self.scaler[17]
+            seg.NaL.gna = self.params[7]
+            seg.Na.gna = self.params[8] * self.params[19]
+            seg.HVA.gcaL = self.params[0]
+            seg.HVA.gcaN = self.params[1]
+            seg.CaT.gcaT = self.params[2]
+            seg.Ih.gk = self.params[3]
+            seg.KDR.gk = self.params[4]
+            seg.Kv31.gk = self.params[5]
+            seg.sKCa.gk = self.params[6]
+            seg.STh.gpas = self.params[17]
+
         proximal = 359/2
         dend_i = 0
         for sec in self.dend0:
             for seg in sec:
                 if df_dis_tree0[dend_i] < proximal:
-                    seg.NaL.gna = self.scaler[15] * self.scaler[7]
-                    seg.Na.gna = self.scaler[16] * self.scaler[8]
-                    seg.HVA.gcaL = self.scaler[9] * self.scaler[0]
-                    seg.HVA.gcaN = self.scaler[10]
-                    seg.CaT.gcaT = self.scaler[11]
-                    seg.Ih.gk = self.scaler[3]
-                    seg.KDR.gk = self.scaler[12] * self.scaler[4]
-                    seg.Kv31.gk = self.scaler[13] * self.scaler[5]
-                    seg.sKCa.gk = self.scaler[14] * self.scaler[6]
-                    seg.STh.gpas = self.scaler[17]
-                else:
-                    seg.NaL.gna = 0         # could be uniform
-                    seg.Na.gna = 0          # could be uniform
-                    seg.HVA.gcaL = 0
-                    seg.HVA.gcaN = self.scaler[10] # more in dendrites than soma
-                    seg.CaT.gcaT = 0     # could be throughout entire dendrite
-                    seg.Ih.gk = self.scaler[3]
-                    seg.KDR.gk = 0
-                    seg.Kv31.gk = 0
-                    seg.sKCa.gk = self.scaler[14] * self.scaler[6]
-                    seg.STh.gpas = self.scaler[17]
-                dend_i += 1
-        # print('tree0 total count: {}'.format(dend_i))
-        # test_dis = []
-        dend_i = 0
-        for sec in self.dend1:
-            for seg in sec:
-                if df_dis_tree1[dend_i] < proximal:
-                    seg.NaL.gna = self.scaler[15] * self.scaler[7]
-                    seg.Na.gna = self.scaler[16] * self.scaler[8]
-                    seg.HVA.gcaL = self.scaler[9] * self.scaler[0]
-                    seg.HVA.gcaN = self.scaler[10]
-                    seg.CaT.gcaT = self.scaler[11]
-                    seg.Ih.gk = self.scaler[3]
-                    seg.KDR.gk = self.scaler[12] * self.scaler[4]
-                    seg.Kv31.gk = self.scaler[13] * self.scaler[5]
-                    seg.sKCa.gk = self.scaler[14] * self.scaler[6]
-                    seg.STh.gpas = self.scaler[17]
+                    seg.NaL.gna = self.params[15] * self.params[7]
+                    seg.Na.gna = self.params[16] * self.params[8]
+                    seg.HVA.gcaL = self.params[9] * self.params[0]
+                    seg.HVA.gcaN = self.params[10]
+                    seg.CaT.gcaT = self.params[11]
+                    seg.Ih.gk = self.params[3]
+                    seg.KDR.gk = self.params[12] * self.params[4]
+                    seg.Kv31.gk = self.params[13] * self.params[5]
+                    seg.sKCa.gk = self.params[14] * self.params[6]
+                    seg.STh.gpas = self.params[17]
                 else:
                     seg.NaL.gna = 0
                     seg.Na.gna = 0
                     seg.HVA.gcaL = 0
-                    seg.HVA.gcaN = self.scaler[10] # more in dendrites than soma
-                    seg.CaT.gcaT = 0      # could be throughout entire dendrite
-                    seg.Ih.gk = self.scaler[3]
+                    seg.HVA.gcaN = self.params[10]
+                    seg.CaT.gcaT = 0
+                    seg.Ih.gk = self.params[3]
                     seg.KDR.gk = 0
                     seg.Kv31.gk = 0
-                    seg.sKCa.gk = self.scaler[14] * self.scaler[6]
-                    seg.STh.gpas = self.scaler[17]
+                    seg.sKCa.gk = self.params[14] * self.params[6]
+                    seg.STh.gpas = self.params[17]
+                dend_i += 1
+        dend_i = 0
+        for sec in self.dend1:
+            for seg in sec:
+                if df_dis_tree1[dend_i] < proximal:
+                    seg.NaL.gna = self.params[15] * self.params[7]
+                    seg.Na.gna = self.params[16] * self.params[8]
+                    seg.HVA.gcaL = self.params[9] * self.params[0]
+                    seg.HVA.gcaN = self.params[10]
+                    seg.CaT.gcaT = self.params[11]
+                    seg.Ih.gk = self.params[3]
+                    seg.KDR.gk = self.params[12] * self.params[4]
+                    seg.Kv31.gk = self.params[13] * self.params[5]
+                    seg.sKCa.gk = self.params[14] * self.params[6]
+                    seg.STh.gpas = self.params[17]
+                else:
+                    seg.NaL.gna = 0
+                    seg.Na.gna = 0
+                    seg.HVA.gcaL = 0
+                    seg.HVA.gcaN = self.params[10] # more in dendrites than soma
+                    seg.CaT.gcaT = 0      # could be throughout entire dendrite
+                    seg.Ih.gk = self.params[3]
+                    seg.KDR.gk = 0
+                    seg.Kv31.gk = 0
+                    seg.sKCa.gk = self.params[14] * self.params[6]
+                    seg.STh.gpas = self.params[17]
                 dend_i += 1
         
         for count, sec in enumerate(self.node):
-            sec.Ra = self.rhoa/10000
-            sec.cm = 2
             sec.insert('extracellular')
             for i in range(1):
-                    sec.xraxial[i]=Rpn0
+                    sec.xraxial[i]=self.Rpn0
                     sec.xg[i] = 1e10
                     sec.xc[i]=0
+
             if count == 9:
                 sec.insert('pas')
                 for seg in sec:
@@ -370,57 +359,48 @@ class CreateSth():
             else:
                 sec.insert('axnode75')
                 for seg in sec:
-                    seg.axnode75.gnabar = 2.0       # 3
+                    seg.axnode75.gnabar = 2.0
                     seg.axnode75.gnapbar = 0.05
                     seg.axnode75.gkbar = 0.07
                     seg.axnode75.gl = 0.005
-                    seg.axnode75.ek = -85         # -95
-                    seg.axnode75.ena = 55         # 45
+                    seg.axnode75.ek = -85
+                    seg.axnode75.ena = 55
                     seg.axnode75.el = -60
-                    # seg.axnode75.vshift = 15      # 10 # rest potential should be -80+vshift
-                    # seg.axnode75.vtraub = -80
         
         for sec in self.MYSA:
-            sec.Ra = self.rhoa/10000
-            sec.cm = 2
             sec.insert('pas')
             sec.insert('extracellular') # for the myelin
             for seg in sec:
                 seg.pas.g = 0.0001
                 seg.pas.e = -65
-            sec.xraxial[0]=Rpn1
-            sec.xg[0] = mygm/(nl*2)
-            sec.xc[0]= mycm/(nl*2)
+            sec.xraxial[0]=self.Rpn1
+            sec.xg[0] = self.mygm/(self.nl*2)
+            sec.xc[0]= self.mycm/(self.nl*2)
 
         for sec in self.FLUT:
-            sec.Ra = self.rhoa/10000
-            sec.cm = 2
             sec.insert('parak75')
             sec.insert('pas')
             sec.insert('extracellular')
             for seg in sec:
                 seg.parak75.gkbar = 0.02
-                seg.parak75.ek = -85       #-95
-                # seg.parak75.vshift = 15    #10
+                seg.parak75.ek = -85
                 seg.pas.g = 0.0001
                 seg.pas.e = -60
             for i in range(1):
-                sec.xraxial[i]=Rpn2
-                sec.xg[i] = mygm/(nl*2)
-                sec.xc[i]= mycm/(nl*2)
+                sec.xraxial[i]=self.Rpn2
+                sec.xg[i] = self.mygm/(self.nl*2)
+                sec.xc[i]= self.mycm/(self.nl*2)
         
         for sec in self.STIN:
-            sec.Ra = self.rhoa/10000
-            sec.cm = 2
             sec.insert('pas')
             sec.insert('extracellular')
             for seg in sec:
                 seg.pas.g = 0.0001
                 seg.pas.e = -65
             for i in range(1):
-                sec.xraxial[i]=Rpx
-                sec.xg[i] = mygm/(nl*2)
-                sec.xc[i]= mycm/(nl*2)
+                sec.xraxial[i]=self.Rpx
+                sec.xg[i] = self.mygm/(self.nl*2)
+                sec.xc[i]= self.mycm/(self.nl*2)
             
         for sec in self.sdi:
             h.ion_style("na_ion",1,2,1,0,1, sec=sec)
